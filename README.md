@@ -1,2 +1,2 @@
 # ANSYS-USERELEMENT-PHFLD
-Phase field fracture via ANSYS USERELEMENT subroutine  
+Phase field fracture realized by ANSYS custom USERELEMENT subroutine  
