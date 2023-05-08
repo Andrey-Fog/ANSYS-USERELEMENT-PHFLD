@@ -1,0 +1,106 @@
+
+FINISH
+/clear
+!!! Define parameters related to model
+
+E  = 210000 		!- Young's modulus [MPa]
+v  = 0.3		!- Poisson's ratio
+L  = 0.04		!- Phase Field length parameter [mm]
+Gc = 2.7		!- Critical energy release rate [MPa mm]
+xk = 1e-07		!- well-conditioning parameter
+
+PLTWDTH = 1
+PLTHGT  = 1 
+CRCKL   = 0.5
+NITER=20
+
+/PREP7
+ET,1,USER300
+!*USRELEM, NNODES, NDIM, KeyShape, NREAL, NSAVEVARS, NRSLTVAR, KEYANSMAT, NINTPNTS, KESTRESS, KEYSYM
+USRELEM, 4, 2, QUAD, 6, 100, 100, 1, 4, 5, 0
+R,1,E,v,l,Gc,xk,0,
+usrdof,Define,ux,uy,uz
+
+MPTEMP,,,,,,,,  
+MPTEMP,1,0  
+MPDATA,EX,1,,210000 
+MPDATA,PRXY,1,,0.3  
+
+!*************************** GEOMETRY
+
+!************** KEYPOINTS
+K,1,CRCKL,PLTHGT/2,,
+K,2,,PLTHGT/2,,
+K,3,,,,
+K,4,CRCKL,,,
+K,5,PLTWDTH,
+K,6,PLTWDTH,PLTHGT/2,,
+K,7,PLTWDTH,PLTHGT,,
+K,8,CRCKL,PLTHGT,,
+K,9,,PLTHGT,,
+K,10,,PLTHGT/2,,
+
+!************** LINES
+LSTR,       1,       2 
+LSTR,       2,       3  
+LSTR,       3,       4 
+LSTR,       4,       5 
+LSTR,       5,       6 
+LSTR,       6,       7  
+LSTR,       7,       8
+LSTR,       8,       9
+LSTR,       9,       10
+LSTR,       1,       10
+LSTR,       1,       4
+LSTR,       1,       6
+LSTR,       1,       8
+
+!************** AREAS
+AL,1,2,3,11 
+AL,4,5,12,11 
+AL,6,7,13,12 
+AL,8,9,10,13 
+
+!*************************** MESHING
+SMRT,1  
+MSHAPE,0,2D 
+MSHKEY,0
+AMESH,ALL  
+!EREF,ALL, , ,1,0,1,1
+!EREF,ALL, , ,1,0,1,1
+!EREF,ALL, , ,1,0,1,1
+!*************************** LOADS
+
+DL,3, ,UY,0  
+DL,4, ,UY,0  
+DL,3, ,UX,0  
+DL,4, ,UX,0 
+
+DK,5, , , ,0,UX, , , , , ,   
+
+DL,7, ,UY,0.01 
+DL,8, ,UY,0.01  
+
+
+!*************************** SOLUTION
+FINISH
+/SOL
+
+!nlgeom,on
+!*eresx,no
+OUTRES,ALL,ALL
+OUTRES,SVAR,ALL
+auto,1
+time,1
+nsubst,NITER,NITER,NITER
+SAVE
+SOLVE
+
+!*************************** RESULTS
+FINISH 
+/POST1
+SET,First
+SET,NEXT
+SET,LAST
+PLESOL, NMISC,9, 0,1.0  
+/REPLOT 
