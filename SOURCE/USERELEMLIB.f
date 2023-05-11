@@ -17,14 +17,8 @@ c Copyright ANSYS.  All Rights Reserved.
      &                     nRsltBsc, RsltBsc, nRsltVar, RsltVar, 
      &                     nElEng, elEnergy)
      &      
-*deck,usermat      USERDISTRIB  parallel                                gal
-  
       
 !DEC$ ATTRIBUTES DLLEXPORT, ALIAS:"USERELEM"::UserElem
-*deck,usermat      USERDISTRIB  parallel                                gal
-
- 
-
 
 #include "impcom.inc"
 c
@@ -307,7 +301,7 @@ c     adopted linear shape functions
  !     compute the increment of strain and recover history variables          
           dstran = 0.d0
           dstran= matmul(Bmat,du)
-          stran = matmul(Bmat,u) !!Проверить порядок!!!
+          stran = matmul(Bmat,u)
           
           do i=1,ntens
               Stress1(i) = saveVars(10*(intPnt-1) + i)
