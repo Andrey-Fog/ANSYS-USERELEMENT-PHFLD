@@ -320,16 +320,11 @@ c --- Current IP coords
          xCurIP(k2)=xCurIP(k2)+dN(k1,1)*xRef(k2,k1)
         end do
        end do
-!c     calculate incremental strains from nodal values
-!       call straininc(ntens,ndim,nnode,mlvarx,dNdx,du,dstran,u,xx1,
-!     * xx1Old)
-!c --- USERMAT is called from here
-!      call put_ElmData ('SVAR', elId,intPnt, 2*ncomp, 
-!     &                    saveVars(10*(intPnt-1) + 1:8))
-!      
+c     calculate incremental strains from nodal values
        call straininc(ntens,ndim,nnodes,nUsrDof,dNdx,du,dstran,u,defG0,
      * xx1Old)
        IncStrain(1:4)=dstran(1:4,1)
+c --- Get stresses and material stiffnes matrix   
        CALL ElemGetMat (elId, matId, nDim, nTens, nDirect,
      &                         intPnt, xCurIP(1), TemperIP,
      &                         TemperIPB, kThermIP, IncStrain(1),
@@ -367,7 +362,7 @@ c
 c     input output arguments         input desc     / output desc
 c     ======================         ==========       ===========
 c     defG        (dp, ar(3x3))      deformation gradient tensor at current
-c                                      time, updated for thichness change in
+c                                      time, updated for thickness change in
 c                                      plane stress when nlgeom=on
 c     kTherm      (int,sc)           flag for thermal loading 
 c                                      input as:
