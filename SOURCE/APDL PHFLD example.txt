@@ -12,7 +12,7 @@ xk = 1e-07		!- well-conditioning parameter
 PLTWDTH = 1
 PLTHGT  = 1 
 CRCKL   = 0.5
-NITER=20
+NITER=1000
 
 /PREP7
 ET,1,USER300
