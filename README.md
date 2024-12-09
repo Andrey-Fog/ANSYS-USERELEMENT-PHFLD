@@ -5,9 +5,9 @@ Phase field fracture realized by ANSYS custom USERELEMENT subroutine. In order t
 In SOURCE folder you can find the APDL script example of 2D cracked plate under tension.  
 
 
-If you using this code for your research purposes please refer:
+If you using this code for your research purposes please refer following paper:
 
-[A phase field approach implementation in ANSYS and numerical examples](https://doi.org/10.3221/IGF-ESIS.70.08) D.Kosov, A. Tumanov, V. Shlyannikov 
+[A phase field approach implementation in ANSYS and numerical examples](https://doi.org/10.3221/IGF-ESIS.70.08) 
 
 
-Extendet version of this library with some new feauters you can find here: https://github.com/DmitryKosov1/Phase-field-fracture-ANSYS
+Extended version of this library with some new beta features you can find here: https://github.com/DmitryKosov1/Phase-field-fracture-ANSYS
