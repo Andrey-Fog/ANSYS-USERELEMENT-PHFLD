@@ -7,6 +7,6 @@ In SOURCE folder you can find the APDL script example of 2D cracked plate under 
 
 If you using this code for your research purposes please refer:
 
-D.Kosov1, A. Tumanov1, V. Shlyannikov "A phase field approach implementation in ANSYS and numerical examples" (2024)
+D.Kosov, A. Tumanov, V. Shlyannikov "A phase field approach implementation in ANSYS and numerical examples" (2024)
 
-More complex version of this library for 3D problems you can find here: https://github.com/DmitryKosov1/Phase-field-fracture-ANSYS
+Extendet version of this library with some new feauters you can find here: https://github.com/DmitryKosov1/Phase-field-fracture-ANSYS
