@@ -1,4 +1,5 @@
-
+!*** If compilation and attachment of the user defined element was successful 
+!*** copy this code to ansys mechanical comand line for testing
 FINISH
 /clear
 !!! Define parameters related to model
