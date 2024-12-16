@@ -161,7 +161,7 @@ c --- temperatures at integration points
               dN(3,1)=(1.d0+gg)*(1.d0+hh)/4.d0
               dN(4,1)=(1.d0-gg)*(1.d0+hh)/4.d0
           
-c --- derivatives of shape functions
+        !     derivatives of shape functions
         !     derivative d(Ni)/d(gg)
               dNdz(1,1)=-(1.d0-hh)/4.d0
               dNdz(1,2)=(1.d0-hh)/4.d0
@@ -324,7 +324,8 @@ c     calculate incremental strains from nodal values
        call straininc(ntens,ndim,nnodes,nUsrDof,dNdx,du,dstran,u,defG0,
      * xx1Old)
        IncStrain(1:4)=dstran(1:4,1)
-c --- Get stresses and material stiffnes matrix   
+c --- Get stresses and material stiffnes matrix  
+c      description of ANSYS internal ElemGetMat function can be found at the end of file
        CALL ElemGetMat (elId, matId, nDim, nTens, nDirect,
      &                         intPnt, xCurIP(1), TemperIP,
      &                         TemperIPB, kThermIP, IncStrain(1),
@@ -334,68 +335,7 @@ c --- Get stresses and material stiffnes matrix
      &                         StrainPl(1), StrainCr(1), 
      &                         StressBk(1), StrainSw, EnergyD(1),
      &                         MatRotGlb(1,1))
-c --- ************************************************************************ 
-c ---   ************************ ElemGetMat description ********************
-c --- ************************************************************************
-c     input arguments
-c     ===============
-c     elId        (int,sc)           element number
-c     matId       (int,sc)           material number of this element
-c     nDim        (int,sc)           number of dimensions of the problem
-c                                    = 2 2D
-c                                    = 3 3D
-c     nTens       (int,sc)           number of stress/strain components
-c     nDirect     (int,sc)           number of stress/strain direct 
-c                                      components
-c     intPnt      (int,sc)           current integration point number
-c     xCurIP      (dp,ar(3))         coordinates of integration point
-c     TemperIP    (dp,sc)            integration point  temperatures at 
-c                                      current time
-c     TemperIPB   (dp,sc)            integration point  temperatures at 
-c                                      the end of last incremetal step
-c     IncStrain   (dp,ar(nTens))     strain for the current substep step when
-c                                       nlgeom = on
-c                                    total strain when nlgeom = off
-c     defG0       (dp,ar(3x3))       deformation gradient tensor at the end
-c                                       of last incremental step 
-c
-c     input output arguments         input desc     / output desc
-c     ======================         ==========       ===========
-c     defG        (dp, ar(3x3))      deformation gradient tensor at current
-c                                      time, updated for thickness change in
-c                                      plane stress when nlgeom=on
-c     kTherm      (int,sc)           flag for thermal loading 
-c                                      input as:
-c                                      = 0 if temp = tref
-c                                      = 1 if temp .ne. tref
-c                                      gets reset to 0
-c                                                   if ALPX, ALPY, and ALPZ = 0
-c                                     
-c     output arguments
-c     ================
-c     cMat        (nTens*nTens)      material Jacobian matrix
-c     MatProp     (dp,ar(5))         commonly used materail properties
-c                                    MatProp(1),Gxz: shear modulus
-c                                    MatProp(2),Gyz: shear modulus
-c                                    MatProp(3),Gxy: shear modulus
-c                                    MatProp(4), density
-c                                    MatProp(5), nuxy
-c     Stress      (dp,ar(nTens))     total stress
-c     Strain      (dp,ar(nTens))     total strain
-c     StressTh    (dp,ar(nTens))     thermal stress
-c     StrainTh    (dp,ar(nTens))     thermal strain
-c     StrainPl    (dp,ar(nTens))     plastic strain
-c     StrainCr    (dp,ar(nTens))     creep strain
-c     StressBk    (dp,ar(nTens))     back stress for kinematic hardening
-c     StrainSw    (dp,sc)            isotropic swelling strain 
-c                                        (swelling capability not available yet)
-c     EnergyD      (dp,ar(3))        energy density 
-c                                    EnergyD(1) elastic energy density
-c                                    EnergyD(2) plastic energy density  
-c                                    EnergyD(3) creep energy density
-c     MatRotGlb   (dp,ar(3,3))       The rotation matrix from global 
-c                                     to  material coordinate system
-c --- ************************************************************************
+
             kTherm = 0
 !c
         do i=1,nTens
@@ -545,12 +485,75 @@ c
       return
       
       end
-c*************************************************************************
+
 c
-c *** Primary function: General User Element Subroutine
-c *** Note:
-c       This routine is completed with an example, see more details later.
+      subroutine straininc(ntens,ndim,nnode,mlvarx,bmat,du,dstran,u,xx1,
+     1 xx1Old)
 c
+c     Notation:  
+c       dstran(i)  incremental strain component 
+c       note:      i = 1   xx direction 
+c                    = 2   yy direction 
+c                    = 3   zz direction
+c                    = 4   xy direction
+c    u() - displacement
+c   du() - increment of displacement in the last inc.
+c   
+#include "impcom.inc"
+
+      DOUBLE PRECISION dstran(ntens),bmat(ndim,nnode),
+     & du(mlvarx,*),xdu(3),
+     & xx1(3,3),u(mlvarx,*),utmp(3),utmpOld(3),xx1Old(3,3)
+      INTEGER k1,i, nnode, nodi, incr_row, mlvarx,
+     & ntens,ndim
+      DOUBLE PRECISION dNidx, dNidy
+      dstran=0.d0
+      ! set xx1 to Identity matrix
+      xx1=0.d0
+      xx1Old=0.d0
+      do k1=1,3
+       xx1(k1,k1)=1.d0
+       xx1Old(k1,k1)=1.d0         
+      end do
+
+c************************************
+c    Compute incremental strains
+c************************************
+c
+      do nodi=1,nnode
+           
+       incr_row=(nodi-1)*ndim
+       do i=1,ndim
+        xdu(i)=du(i+incr_row,1)
+        utmp(i)=u(i+incr_row,1)
+        utmpOld(i)=utmp(i)-xdu(i)
+       end do
+
+       dNidx=bmat(1,nodi)
+       dNidy=bmat(2,nodi)
+
+       dstran(1)=dstran(1)+dNidx*xdu(1)
+       dstran(2)=dstran(2)+dNidy*xdu(2)
+       dstran(4)=dstran(4)+dNidy*xdu(1)+dNidx*xdu(2)  
+
+c     deformation gradient
+       xx1(1,1)=xx1(1,1)+dNidx*utmp(1)
+       xx1(1,2)=xx1(1,2)+dNidy*utmp(1)
+       xx1(2,1)=xx1(2,1)+dNidx*utmp(2)
+       xx1(2,2)=xx1(2,2)+dNidy*utmp(2)
+c
+       xx1Old(1,1)=xx1Old(1,1)+dNidx*utmpOld(1)
+       xx1Old(1,2)=xx1Old(1,2)+dNidy*utmpOld(1)
+       xx1Old(2,1)=xx1Old(2,1)+dNidx*utmpOld(2)
+       xx1Old(2,2)=xx1Old(2,2)+dNidy*utmpOld(2)
+
+      end do
+c
+      return
+      end
+c***********************************************************************************
+c ******************* Description of USERELEMENTt Subroutine **********************
+c***********************************************************************************
 c
 c     PROGRAMMER SHOULD NOT CHANGE ANY PURE INPUT ARGUMENTS (marked by ....,in)!
 c
@@ -736,70 +739,65 @@ c     followed by:
 c       2.) Strains : Ex Ey Ez Exy Eyz Exz Eeqv at all corner points
 c     where Seqv and Eeqv = equivalent stress and strain respectively
 c
+c --- ********************************************************************************** 
+c ---   ***************************** ElemGetMat description *************************
+c --- **********************************************************************************
+c     input arguments
+c     ===============
+c     elId        (int,sc)           element number
+c     matId       (int,sc)           material number of this element
+c     nDim        (int,sc)           number of dimensions of the problem
+c                                    = 2 2D
+c                                    = 3 3D
+c     nTens       (int,sc)           number of stress/strain components
+c     nDirect     (int,sc)           number of stress/strain direct 
+c                                      components
+c     intPnt      (int,sc)           current integration point number
+c     xCurIP      (dp,ar(3))         coordinates of integration point
+c     TemperIP    (dp,sc)            integration point  temperatures at 
+c                                      current time
+c     TemperIPB   (dp,sc)            integration point  temperatures at 
+c                                      the end of last incremetal step
+c     IncStrain   (dp,ar(nTens))     strain for the current substep step when
+c                                       nlgeom = on
+c                                    total strain when nlgeom = off
+c     defG0       (dp,ar(3x3))       deformation gradient tensor at the end
+c                                       of last incremental step 
 c
-************************************************************************
-c
-      subroutine straininc(ntens,ndim,nnode,mlvarx,bmat,du,dstran,u,xx1,
-     1 xx1Old)
-c
-c     Notation:  
-c       dstran(i)  incremental strain component 
-c       note:      i = 1   xx direction 
-c                    = 2   yy direction 
-c                    = 3   zz direction
-c                    = 4   xy direction
-c    u() - displacement
-c   du() - increment of displacement in the last inc.
-c   
-#include "impcom.inc"
-
-      DOUBLE PRECISION dstran(ntens),bmat(ndim,nnode),
-     & du(mlvarx,*),xdu(3),
-     & xx1(3,3),u(mlvarx,*),utmp(3),utmpOld(3),xx1Old(3,3)
-      INTEGER k1,i, nnode, nodi, incr_row, mlvarx,
-     & ntens,ndim
-      DOUBLE PRECISION dNidx, dNidy
-      dstran=0.d0
-      ! set xx1 to Identity matrix
-      xx1=0.d0
-      xx1Old=0.d0
-      do k1=1,3
-       xx1(k1,k1)=1.d0
-       xx1Old(k1,k1)=1.d0         
-      end do
-
-c************************************
-c    Compute incremental strains
-c************************************
-c
-      do nodi=1,nnode
-           
-       incr_row=(nodi-1)*ndim
-       do i=1,ndim
-        xdu(i)=du(i+incr_row,1)
-        utmp(i)=u(i+incr_row,1)
-        utmpOld(i)=utmp(i)-xdu(i)
-       end do
-
-       dNidx=bmat(1,nodi)
-       dNidy=bmat(2,nodi)
-
-       dstran(1)=dstran(1)+dNidx*xdu(1)
-       dstran(2)=dstran(2)+dNidy*xdu(2)
-       dstran(4)=dstran(4)+dNidy*xdu(1)+dNidx*xdu(2)  
-
-c     deformation gradient
-       xx1(1,1)=xx1(1,1)+dNidx*utmp(1)
-       xx1(1,2)=xx1(1,2)+dNidy*utmp(1)
-       xx1(2,1)=xx1(2,1)+dNidx*utmp(2)
-       xx1(2,2)=xx1(2,2)+dNidy*utmp(2)
-c
-       xx1Old(1,1)=xx1Old(1,1)+dNidx*utmpOld(1)
-       xx1Old(1,2)=xx1Old(1,2)+dNidy*utmpOld(1)
-       xx1Old(2,1)=xx1Old(2,1)+dNidx*utmpOld(2)
-       xx1Old(2,2)=xx1Old(2,2)+dNidy*utmpOld(2)
-
-      end do
-c
-      return
-      end
+c     input output arguments         input desc     / output desc
+c     ======================         ==========       ===========
+c     defG        (dp, ar(3x3))      deformation gradient tensor at current
+c                                      time, updated for thickness change in
+c                                      plane stress when nlgeom=on
+c     kTherm      (int,sc)           flag for thermal loading 
+c                                      input as:
+c                                      = 0 if temp = tref
+c                                      = 1 if temp .ne. tref
+c                                      gets reset to 0
+c                                                   if ALPX, ALPY, and ALPZ = 0
+c                                     
+c     output arguments
+c     ================
+c     cMat        (nTens*nTens)      material Jacobian matrix
+c     MatProp     (dp,ar(5))         commonly used materail properties
+c                                    MatProp(1),Gxz: shear modulus
+c                                    MatProp(2),Gyz: shear modulus
+c                                    MatProp(3),Gxy: shear modulus
+c                                    MatProp(4), density
+c                                    MatProp(5), nuxy
+c     Stress      (dp,ar(nTens))     total stress
+c     Strain      (dp,ar(nTens))     total strain
+c     StressTh    (dp,ar(nTens))     thermal stress
+c     StrainTh    (dp,ar(nTens))     thermal strain
+c     StrainPl    (dp,ar(nTens))     plastic strain
+c     StrainCr    (dp,ar(nTens))     creep strain
+c     StressBk    (dp,ar(nTens))     back stress for kinematic hardening
+c     StrainSw    (dp,sc)            isotropic swelling strain 
+c                                        (swelling capability not available yet)
+c     EnergyD      (dp,ar(3))        energy density 
+c                                    EnergyD(1) elastic energy density
+c                                    EnergyD(2) plastic energy density  
+c                                    EnergyD(3) creep energy density
+c     MatRotGlb   (dp,ar(3,3))       The rotation matrix from global 
+c                                     to  material coordinate system
+c --- ************************************************************************
