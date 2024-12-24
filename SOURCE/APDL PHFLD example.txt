@@ -14,14 +14,14 @@ xk = 1e-07		!- well-conditioning parameter
 PLTWDTH = 1     
 PLTHGT  = 1 
 CRCKL   = 0.5
-NITER=1000
+NITER=10
 
 /PREP7
 !*** Add userelement 
 ET,1,USER300
 !*USRELEM, NNODES, NDIM, KeyShape, NREAL, NSAVEVARS, NRSLTVAR, KEYANSMAT, NINTPNTS, KESTRESS, KEYSYM
 USRELEM, 4, 2, QUAD, 6, 100, 100, 1, 4, 5, 0
-R,1,E,v,l,Gc,xk,0,
+R,1,E,v,l,Gc,xk,1,
 usrdof,Define,ux,uy,uz
 
 !*** Elastic properties
@@ -90,6 +90,7 @@ DL,8, ,UY,0.01
 !*************************** SOLUTION
 FINISH
 /SOL
+!nlgeom,on
 OUTRES,ALL,ALL
 OUTRES,SVAR,ALL
 auto,0
@@ -101,8 +102,6 @@ SOLVE
 !*************************** RESULTS
 FINISH 
 /POST1
-!SET,First
-!SET,NEXT
 SET,LAST
-PLESOL, NMISC,9, 0,1.0  
+PLNSOL, U,Z, 0,1.0  
 /REPLOT 

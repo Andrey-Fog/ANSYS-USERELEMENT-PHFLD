@@ -48,6 +48,9 @@ c
      &                 RsltBsc(nRsltBsc), RsltVar(nRsltVar), 
      &                 elEnergy(nElEng)
 c
+      DOUBLE PRECISION sigm, nStrain(48), nStress(48),
+     &                 wStrain(48), wStress(48),
+     &                 wStrainTh(48), wStrainPl(48), wStrainCr(48)
 #include "locknm.inc"
 
 
@@ -122,17 +125,7 @@ c      ELID near the crack tip 578, and 611 is far away
       IF (keyMtx(3).EQ.1) CALL vzero (eDamp(1,1) ,nUsrDof2)
       IF (keyMtx(5).EQ.1) CALL vzero (fExt(1)    ,nUsrDof)
       IF (keyMtx(6).EQ.1) CALL vzero (fInt(1)    ,nUsrDof)
-      IF (nlgeom.EQ.0) THEN
-         DO iDim = 1, 3
-            DO iDim1 = 1, 3
-               defG0(iDim, iDim1) = 0.0D0
-            END DO
-            defG0(iDim, iDim) = 1.0D0
-         END DO
-         CALL vmove (defG0(1,1),defG(1,1),9)
-      ELSE
-c        Nonlinear logic not defined here
-      END IF
+
       elVol  = 0.d0
       elMass = 0.d0
       Strain = 0.d0
@@ -283,36 +276,28 @@ c     adopted linear shape functions
           if (phi.gt.1.d0) phi=1
           do i=1,2
               du(i,1) = ItrValDofs(i)
-              u(i,1) = IncValDofs(i)
+              u(i,1) = TotValDofs(i)
           end do
           do i=4,5
               du(i-1,1) = ItrValDofs(i)
-              u(i-1,1) = IncValDofs(i)
+              u(i-1,1) = TotValDofs(i)
           end do  
           do i=6,7
               du(i-1,1) = ItrValDofs(i+1)
-              u(i-1,1) = IncValDofs(i+1)
+              u(i-1,1) = TotValDofs(i+1)
           end do  
           do i=8,9
               du(i-1,1) = ItrValDofs(i+2)
-              u(i-1,1) = IncValDofs(i+2)
+              u(i-1,1) = TotValDofs(i+2)
           end do
           
  !     compute the increment of strain and recover history variables          
           dstran = 0.d0
           dstran= matmul(Bmat,du)
           stran = matmul(Bmat,u)
-          
-          do i=1,ntens
-              Stress1(i) = saveVars(10*(intPnt-1) + i)
-              Strain1(i) = saveVars(10*(intPnt-1) + i + 4)
-          end do    
           phin = saveVars(10*(intPnt-1) + 9)
           Hn = saveVars(10*(intPnt-1) + 10)
-          Psi=0.d0
-          do k1=1,ntens
-              Psi=Psi+Stress1(k1)*Strain1(k1)*0.5d0
-          end do
+          
 c --- Current IP coords          
        xCurIP=0.d0
        do k1=1,nnodes
@@ -320,10 +305,23 @@ c --- Current IP coords
          xCurIP(k2)=xCurIP(k2)+dN(k1,1)*xRef(k2,k1)
         end do
        end do
+
+       IF (nlgeom.EQ.0) THEN
+         DO iDim = 1, 3
+            DO iDim1 = 1, 3
+               defG0(iDim, iDim1) = 0.0D0
+            END DO
+            defG0(iDim, iDim) = 1.0D0
+         END DO
+
+         CALL vmove (defG0(1,1),defG(1,1),9)
+         IncStrain(1:4)=stran(1:4,1)!!!!
+       ELSE
 c     calculate incremental strains from nodal values
-       call straininc(ntens,ndim,nnodes,nUsrDof,dNdx,du,dstran,u,defG0,
-     * xx1Old)
-       IncStrain(1:4)=dstran(1:4,1)
+          call straininc(ntens,ndim,nnodes,nUsrDof,dNdx,
+     *                   du,dstran,u,defG0,xx1Old)
+          IncStrain(1:4)=dstran(1:4,1) 
+      END IF
 c --- Get stresses and material stiffnes matrix  
 c      description of ANSYS internal ElemGetMat function can be found at the end of file
        CALL ElemGetMat (elId, matId, nDim, nTens, nDirect,
@@ -338,10 +336,7 @@ c      description of ANSYS internal ElemGetMat function can be found at the end
 
             kTherm = 0
 !c
-        do i=1,nTens
-                Strain(i) = Strain1(i) + Strain(i)
-                Stress(i) = Stress1(i) + Stress(i)
-        end do
+        Psi=EnergyD(1)+EnergyD(2)+EnergyD(3)
         if (Psi.gt.Hn) then
                   H=Psi
               else
@@ -376,8 +371,15 @@ c      description of ANSYS internal ElemGetMat function can be found at the end
               saveVars(40 + 10*(intPnt-1) + i) = 
      1        Stress(i)*((1.d0-phin)**2+xk) 
               saveVars(40 + 10*(intPnt-1) + i + 4) = Strain(i)
-        end do
-
+      end do
+      k1 = (intPnt-1)*nTens+1
+c --- calculate other element quantities
+               CALL vmove (Strain(1), wStrain(k1), nTens)
+               CALL vmove (Stress(1), wStress(k1), nTens)
+               CALL vmove (StrainTh(1), wStrainTh(k1), nTens)
+               CALL vmove (StrainPl(1), wStrainPl(k1), nTens)
+               CALL vmove (StrainCr(1), wStrainCr(k1), nTens)
+               
       end do    ! end loop on material integration points 
 c ---   ////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\   
 c ---  ////////end loop on material integration points\\\\\\\       
@@ -468,20 +470,53 @@ c --- //////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\
 
      
  990  CONTINUE
-      ! do intPnt=1,4
 
-      !enddo
-      RsltVar = saveVars 
+c --- calculate strains and stresses at nodes by extrapolating and output
+c       to result files
+
+c      IF 2D THEN  nNodesCorner = nNodes
+         CALL ElemRsltNode (KeyOpt(1), nrkey, nTens, wStress(1), 
+     &                        wStrain(1), nIntPnts, nStress(1), 
+     &                        nStrain(1), nNodes)
+
+c --- only calculate basic result variables when it is allowed
+c        and necessary
 c      
-      RsltBsc=0
-      do intPnt=1,4
-       do j=1,4
-         RsltBsc(14*(intPnt-1) + j )=  saveVars(40+10*(intPnt-1) + j) 
-         RsltBsc(14*(intPnt-1) + j +7) = 
-     &                             saveVars(40+10*(intPnt-1) + j + 4) 
-       enddo
-      end do    
-           
+      IF (nRsltBsc.GT.0) THEN
+            DO iNode = 1, nNodes
+               k1 = (iNode-1)*nTens + 1
+               k2 = (iNode-1)*7 + 1
+               CALL vmove (nStress(k1), RsltBsc(k2), nTens)
+               sigm = (nStress(k1)+nStress(k1+1)+nStress(k1+2))/3.0d0
+               IF (KeyOpt(1).EQ.0) THEN
+                  RsltBsc(k2+4) = 0.0d0
+                  RsltBsc(k2+5) = 0.0d0
+                  RsltBsc(k2+6) = SQRT(1.5d0*
+     &                    ( (nStress(k1)-sigm)*(nStress(k1)-sigm)
+     &                    + (nStress(k1+1)-sigm)*(nStress(k1+1)-sigm)
+     &                    + (nStress(k1+2)-sigm)*(nStress(k1+2)-sigm)
+     &                    + 2.0d0*nStress(k1+3)*nStress(k1+3)))
+               ELSE
+                  RsltBsc(k2+6) = SQRT(1.5d0*
+     &                    ( (nStress(k1)-sigm)*(nStress(k1)-sigm)
+     &                    + (nStress(k1+1)-sigm)*(nStress(k1+1)-sigm)
+     &                    + (nStress(k1+2)-sigm)*(nStress(k1+2)-sigm)
+     &                    + 2.0d0*(nStress(k1+3)*nStress(k1+3)
+     &                    +        nStress(k1+4)*nStress(k1+4)
+     &                    +        nStress(k1+5)*nStress(k1+5))))
+               END IF
+
+               k2 = (nNodes+iNode-1)*7 + 1
+               CALL vmove (nStrain(k1), RsltBsc(k2), nTens)
+               IF (KeyOpt(1).EQ.0) THEN
+                  RsltBsc(k2+4) = 0.0d0
+                  RsltBsc(k2+5) = 0.0d0
+               END IF
+               CALL equivStrain (nu, nStrain(k1), nTens, 
+     &                            RsltBsc(k2+6))
+            END DO    
+         END IF
+      RsltVar = saveVars            
       return
       
       end
