@@ -371,6 +371,8 @@ c      description of ANSYS internal ElemGetMat function can be found at the end
               saveVars(40 + 10*(intPnt-1) + i) = 
      1        Stress(i)*((1.d0-phin)**2+xk) 
               saveVars(40 + 10*(intPnt-1) + i + 4) = Strain(i)
+              Stress(i)= 
+     1        Stress(i)*((1.d0-phin)**2+xk)
       end do
       k1 = (intPnt-1)*nTens+1
 c --- calculate other element quantities

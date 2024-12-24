@@ -6,6 +6,8 @@ FINISH
 
 E  = 210000 		!- Young's modulus [MPa]
 v  = 0.3		!- Poisson's ratio
+S0 = 700		!- well-conditioning parameter
+Sct = 1e-07		!- well-conditioning parameter
 L  = 0.04		!- Phase Field length parameter [mm]
 Gc = 2.7		!- Critical energy release rate [MPa mm]
 xk = 1e-07		!- well-conditioning parameter
@@ -14,7 +16,7 @@ xk = 1e-07		!- well-conditioning parameter
 PLTWDTH = 1     
 PLTHGT  = 1 
 CRCKL   = 0.5
-NITER=10
+NITER=1000
 
 /PREP7
 !*** Add userelement 
@@ -29,6 +31,11 @@ MPTEMP,,,,,,,,
 MPTEMP,1,0  
 MPDATA,EX,1,,210000 
 MPDATA,PRXY,1,,0.3  
+
+!*** Plastic properties
+TB,BISO,1,1,2,  
+TBTEMP,0
+TBDATA,,S0,Sct,,,,
 
 !***************************CREATE GEOMETRY
 
@@ -71,7 +78,7 @@ MSHAPE,0,2D
 MSHKEY,0
 AMESH,ALL  
 !*** Uncomment next lines to refine FE model
-!EREF,ALL, , ,1,0,1,1
+EREF,ALL, , ,1,0,1,1
 !EREF,ALL, , ,1,0,1,1
 !EREF,ALL, , ,1,0,1,1
 !*************************** LOADS
@@ -90,7 +97,7 @@ DL,8, ,UY,0.01
 !*************************** SOLUTION
 FINISH
 /SOL
-!nlgeom,on
+nlgeom,on
 OUTRES,ALL,ALL
 OUTRES,SVAR,ALL
 auto,0
