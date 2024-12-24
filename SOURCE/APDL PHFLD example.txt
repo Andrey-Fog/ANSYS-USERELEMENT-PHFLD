@@ -16,7 +16,7 @@ xk = 1e-07		!- well-conditioning parameter
 PLTWDTH = 1     
 PLTHGT  = 1 
 CRCKL   = 0.5
-NITER=1000
+NITER=100
 
 /PREP7
 !*** Add userelement 
@@ -78,15 +78,15 @@ MSHAPE,0,2D
 MSHKEY,0
 AMESH,ALL  
 !*** Uncomment next lines to refine FE model
-EREF,ALL, , ,1,0,1,1
+!EREF,ALL, , ,1,0,1,1
 !EREF,ALL, , ,1,0,1,1
 !EREF,ALL, , ,1,0,1,1
 !*************************** LOADS
 
 DL,3, ,UY,0  
 DL,4, ,UY,0  
-DL,3, ,UX,0  
-DL,4, ,UX,0 
+!DL,3, ,UX,0  
+!DL,4, ,UX,0 
 
 DK,5, , , ,0,UX, , , , , ,   
 
