@@ -132,28 +132,8 @@ c      ELID near the crack tip 578, and 611 is far away
       Strain = 0.d0
       Stress = 0.d0
       CALL vzero (elEnergy(1), nElEng)
-c --- rearray pressure vector
-      pPres(1)=-Press(8)
-      pPres(2)=-Press(1)
-      pPres(3)= Press(3)
-      pPres(4)=-Press(2)
-      pPres(5)= Press(4)
-      pPres(6)= Press(5)
-      pPres(7)=-Press(4)
-      pPres(8)= Press(6)      
-      SHTR=0.d0
-      SHTR(1,1)=shIso(1)
-      SHTR(2,2)=shIso(1)
-      SHTR(3,3)=shIso(2)
-      SHTR(4,4)=shIso(2)
-      SHTR(5,5)=shIso(3)
-      SHTR(6,6)=shIso(3)
-      SHTR(7,7)=shIso(4)
-      SHTR(8,8)=shIso(4)
-      fPres = matmul(SHTR,pPres)
-      do i=1,8
-           rhs(i) = rhs(i) + fPres(i)
-      end do      
+    
+      
 c --- \\\\\\\\\\\\\\\\\\\\\\\\\\//////////////////////////////   
 c ---  \\\\\\\\Start loop on material integration points/////       
 c ---   \\\\\\\\\\\\\\\\\\\\\\\\////////////////////////////       
@@ -408,6 +388,31 @@ c --- calculate other element quantities
 c ---   ////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\   
 c ---  ////////end loop on material integration points\\\\\\\       
 c --- //////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\ 
+c
+c --- rearray pressure vector
+      pPres(1)=-Press(8)
+      pPres(2)=-Press(1)
+      pPres(3)= Press(3)
+      pPres(4)=-Press(2)
+      pPres(5)= Press(4)
+      pPres(6)= Press(5)
+      pPres(7)=-Press(4)
+      pPres(8)= Press(6)  
+c --- calculate pressure load
+      SHTR=0.d0
+      SHTR(1,1)=dN(1,1)
+      SHTR(2,2)=dN(1,1)
+      SHTR(3,3)=dN(2,1)
+      SHTR(4,4)=dN(2,1)
+      SHTR(5,5)=dN(3,1)
+      SHTR(6,6)=dN(3,1)
+      SHTR(7,7)=dN(4,1)
+      SHTR(8,8)=dN(4,1)
+      fPres = matmul(SHTR,pPres)
+      do i=1,8
+           rhs(i) = rhs(i) + fPres(i)
+      end do 
+c --- rearray load vector according to ANSYS structure     
       do i=1,4
           fint(i*3) = rhs(8+i)
       end do
@@ -423,7 +428,7 @@ c --- //////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\
       do i=10,11
             fint(i) = rhs(i-3)
       end do   
-      
+c --- rearray stiffnes matrix according to ANSYS structure        
       do k1=1,4
           do i=1,12
               estiff(3*k1,i) = 0.d0
