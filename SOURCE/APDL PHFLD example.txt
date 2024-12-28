@@ -78,7 +78,7 @@ MSHAPE,0,2D
 MSHKEY,0
 AMESH,ALL  
 !*** Uncomment next lines to refine FE model
-!EREF,ALL, , ,1,0,1,1
+EREF,ALL, , ,1,0,1,1
 !EREF,ALL, , ,1,0,1,1
 !EREF,ALL, , ,1,0,1,1
 !*************************** LOADS
