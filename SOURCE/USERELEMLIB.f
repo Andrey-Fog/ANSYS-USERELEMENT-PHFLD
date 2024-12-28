@@ -79,7 +79,8 @@ c
      &                 du(8,1), stress2(ndim*2,1),
      &                 rhs(nUsrDof),dstran(4,1),
      &                 amatrx(nUsrDof,nUsrDof),stran(4,1) 
-      
+c --- Include pressure load      
+      DOUBLE PRECISION pPres(8), SHTR(8,8),
 c --- Real constants      
       DOUBLE PRECISION Ex, nu, xlc, Gc,xk
 c --- Flags
@@ -131,6 +132,7 @@ c      ELID near the crack tip 578, and 611 is far away
       Strain = 0.d0
       Stress = 0.d0
       CALL vzero (elEnergy(1), nElEng)
+    
       
 c --- \\\\\\\\\\\\\\\\\\\\\\\\\\//////////////////////////////   
 c ---  \\\\\\\\Start loop on material integration points/////       
@@ -371,6 +373,8 @@ c      description of ANSYS internal ElemGetMat function can be found at the end
               saveVars(40 + 10*(intPnt-1) + i) = 
      1        Stress(i)*((1.d0-phin)**2+xk) 
               saveVars(40 + 10*(intPnt-1) + i + 4) = Strain(i)
+              Stress(i)= 
+     1        Stress(i)*((1.d0-phin)**2+xk)
       end do
       k1 = (intPnt-1)*nTens+1
 c --- calculate other element quantities
@@ -384,6 +388,31 @@ c --- calculate other element quantities
 c ---   ////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\   
 c ---  ////////end loop on material integration points\\\\\\\       
 c --- //////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\ 
+c
+c --- rearray pressure vector
+      pPres(1)=-Press(8)
+      pPres(2)=-Press(1)
+      pPres(3)= Press(3)
+      pPres(4)=-Press(2)
+      pPres(5)= Press(4)
+      pPres(6)= Press(5)
+      pPres(7)=-Press(4)
+      pPres(8)= Press(6)  
+c --- calculate pressure load
+      SHTR=0.d0
+      SHTR(1,1)=dN(1,1)
+      SHTR(2,2)=dN(1,1)
+      SHTR(3,3)=dN(2,1)
+      SHTR(4,4)=dN(2,1)
+      SHTR(5,5)=dN(3,1)
+      SHTR(6,6)=dN(3,1)
+      SHTR(7,7)=dN(4,1)
+      SHTR(8,8)=dN(4,1)
+      fPres = matmul(SHTR,pPres)
+      do i=1,8
+           rhs(i) = rhs(i) + fPres(i)
+      end do 
+c --- rearray load vector according to ANSYS structure     
       do i=1,4
           fint(i*3) = rhs(8+i)
       end do
@@ -399,7 +428,7 @@ c --- //////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\
       do i=10,11
             fint(i) = rhs(i-3)
       end do   
-      
+c --- rearray stiffnes matrix according to ANSYS structure        
       do k1=1,4
           do i=1,12
               estiff(3*k1,i) = 0.d0
