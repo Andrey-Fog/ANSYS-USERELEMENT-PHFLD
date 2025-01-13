@@ -80,7 +80,7 @@ c
      &                 rhs(nUsrDof),dstran(4,1),
      &                 amatrx(nUsrDof,nUsrDof),stran(4,1) 
 c --- Include pressure load      
-      DOUBLE PRECISION pPres(8), SHTR(8,8),
+      DOUBLE PRECISION pPres(8), SHTR(8,8), fPres(8)
 c --- Real constants      
       DOUBLE PRECISION Ex, nu, xlc, Gc,xk
 c --- Flags
