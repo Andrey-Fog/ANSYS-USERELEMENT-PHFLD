@@ -64,7 +64,7 @@ c
      &                 nDirect, kThermIP
       DOUBLE PRECISION cMat(ndim*2,ndim*2),shIsoC(nNodes),
      &                 shIso(nNodes),dVol, Strain(ndim*2), 
-     &                 Stress(ndim*2), prop(5),Bmat(nDim*2,8),
+     &                 Stress(ndim*2), prop(3),Bmat(nDim*2,8),
      &                 IncStrain(ndim*2),defG(3,3),coord24(2,4),
      &                 defG0(3,3), xCurIP(ndim), TemperIP,
      &                 TemperIPB, StressTh(ndim*2), MatProp(5),
@@ -82,14 +82,13 @@ c
 c --- Include pressure load      
       DOUBLE PRECISION pPres(8), SHTR(8,8), fPres(8)
 c --- Real constants      
-      DOUBLE PRECISION Ex, nu, xlc, Gc,xk
+      DOUBLE PRECISION Ex, nu, xlc, Gc, xk, C1, C2
 c --- Flags
       INTEGER ELTYPE
 c --- temporary debug key
       INTEGER debug, ix, debugELM 
       
-      DOUBLE PRECISION IPCOORD(nDim,nIntPnts),s,t,gg,hh 
-      
+      DOUBLE PRECISION IPCOORD(nDim,nIntPnts),s,t,gg,hh     
       
       data  coord24 /-1.d0, -1.d0,
      2                1.d0, -1.d0,
@@ -97,21 +96,20 @@ c --- temporary debug key
      4                -1.d0, 1.d0/ 
       
       parameter (gaussCoord=0.577350269d0)
-
-
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-      Ex = RealConst(1) 
-      nu = RealConst(2)
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc      
+c     get real constants
+      C1 = RealConst(1) 
+      C2 = RealConst(2)
       xlc= RealConst(3)
-      Gc=  RealConst(4)
-      xk=  RealConst(5)
+      IF (C1.EQ.0.0d0) Gc = RealConst(4)
+      xk = RealConst(5)
       ELTYPE=  RealConst(6)
 c      ELID near the crack tip 578, and 611 is far away
-      debugELM = 578
-      IF (elID.eq.debugELM) THEN
-          debugELM=0.d0
-      END IF
-            nTens = nDim*2
+      !debugELM = 578
+      !IF (elID.eq.debugELM) THEN
+      !    debugELM=0.d0
+      !END IF
+      nTens = nDim*2
       nComp = nDim*nDim
       nDirect = 3
       nlgeom = 0
@@ -337,6 +335,9 @@ c      description of ANSYS internal ElemGetMat function can be found at the end
      &                         MatRotGlb(1,1))
 
             kTherm = 0
+      !Ex =  MatProp(1) 
+      nu =  MatProp(5)
+      IF (C1.NE.0.0d0) Gc = C1*(exp(C2 * temper(1)))
 !c
         Psi=EnergyD(1)+EnergyD(2)+EnergyD(3)
         if (Psi.gt.Hn) then
