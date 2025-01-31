@@ -317,7 +317,7 @@ c --- Current IP coords
          END DO
 
          CALL vmove (defG0(1,1),defG(1,1),9)
-         IncStrain(1:4)=stran(1:4,1)!!!!
+         IncStrain(1:4)=stran(1:4,1) !!!!
        ELSE
 c     calculate incremental strains from nodal values
           call straininc(ntens,ndim,nnodes,nUsrDof,dNdx,
