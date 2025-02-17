@@ -82,7 +82,7 @@ c
 c --- Include pressure load      
       DOUBLE PRECISION pPres(8), SHTR(8,8), fPres(8)
 c --- Real constants      
-      DOUBLE PRECISION Ex, nu, xlc, Gc, xk, C1, C2
+      DOUBLE PRECISION Ex, nu, xlc, Gc, xk, C1, C2, C3
 c --- Flags
       INTEGER ELTYPE
 c --- temporary debug key
@@ -98,12 +98,20 @@ c --- temporary debug key
       parameter (gaussCoord=0.577350269d0)
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc      
 c     get real constants
-      C1 = RealConst(1) 
-      C2 = RealConst(2)
-      xlc= RealConst(3)
-      IF (C1.EQ.0.0d0) Gc = RealConst(4)
-      xk = RealConst(5)
+      Gc = RealConst(1)
+      xlc= RealConst(2)
+      C1 = RealConst(3) 
+      C2 = RealConst(4)
+      C3 = RealConst(5)
+      xk = 1.0e-9 
       ELTYPE=  RealConst(6)
+      IF (C1.NE.0.0d0) THEN
+              Gc = C1*temper(1)**C2
+      END IF
+      IF (C3.NE.0.0d0) THEN
+          xlc = xlc/exp(temper(1)*C3)
+      END IF
+      ! Gc = Gc/exp(temper(1)*C3)
 c      ELID near the crack tip 578, and 611 is far away
       !debugELM = 578
       !IF (elID.eq.debugELM) THEN
@@ -337,11 +345,13 @@ c      description of ANSYS internal ElemGetMat function can be found at the end
             kTherm = 0
       !Ex =  MatProp(1) 
       nu =  MatProp(5)
-      IF (C1.NE.0.0d0) Gc = C1*(exp(C2 * temper(1)))
+      !for positive C1 power law, for negative logarithmic
+
+      
 !c
         Psi=EnergyD(1)+EnergyD(2)+EnergyD(3)
         if (Psi.gt.Hn) then
-                  H=Psi
+                  H=abs(Psi)
               else
                   H=Hn
         endif
