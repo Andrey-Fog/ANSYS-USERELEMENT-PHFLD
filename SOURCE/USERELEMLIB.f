@@ -103,7 +103,7 @@ c     get real constants
       C1 = RealConst(3) 
       C2 = RealConst(4)
       C3 = RealConst(5)
-      xk = 1.0e-9 
+      xk = 1.0e-7 
       ELTYPE=  RealConst(6)
       IF (C1.NE.0.0d0) THEN
               Gc = C1*temper(1)**C2
@@ -278,7 +278,7 @@ c     adopted linear shape functions
           do inod=1,nNodes
               phi=phi+dN(inod,1)*phik(inod)
           end do
-
+          !if (phi.lt.0.d0) phi= 0
           du = 0.d0
           u = 0.d0
           if (phi.gt.1.d0) phi=1
@@ -351,7 +351,7 @@ c      description of ANSYS internal ElemGetMat function can be found at the end
 !c
         Psi=EnergyD(1)+EnergyD(2)+EnergyD(3)
         if (Psi.gt.Hn) then
-                  H=abs(Psi)
+                  H=Psi
               else
                   H=Hn
         endif
