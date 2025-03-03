@@ -346,7 +346,7 @@ c      description of ANSYS internal ElemGetMat function can be found at the end
       !Ex =  MatProp(1) 
       nu =  MatProp(5)
       !for positive C1 power law, for negative logarithmic
-
+      !debug=10
       
 !c
         Psi=EnergyD(1)+EnergyD(2)+EnergyD(3)
@@ -375,7 +375,7 @@ c      description of ANSYS internal ElemGetMat function can be found at the end
            
         rhs(9:12)=rhs(9:12)+
      1    dvol*(matmul(transpose(dNdx),matmul(dNdx,phik(1:4)))
-     2    *Gc*xlc+dN(1:4,1)*((Gc/xlc+2.d0*H)*phi-2.d0*H)) 
+     2    *Gc*xlc+dN(1:4,1)*((Gc/xlc*phi-2.d0*H*(1-phi)))) 
 
 
 
