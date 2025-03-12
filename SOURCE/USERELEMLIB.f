@@ -363,11 +363,11 @@ c      description of ANSYS internal ElemGetMat function can be found at the end
         saveVars(10*(intPnt-1) + 10) = H
         
         amatrx(1:8,1:8)=amatrx(1:8,1:8)+
-     1      dvol*(((1.d0-phin)**2+xk)*
+     1      dvol*(((1.d0-phi)**2+xk)*
      1      matmul(matmul(transpose(Bmat),cMat),Bmat)) 
             
         rhs(1:8)=rhs(1:8)+
-     1 dvol*(matmul(transpose(Bmat),Stress)*((1.d0-phin)**2+xk))       
+     1 dvol*(matmul(transpose(Bmat),Stress)*((1.d0-phi)**2+xk))       
             
         amatrx(9:12,9:12)=amatrx(9:12,9:12)+
      1    dvol*(matmul(transpose(dNdx),dNdx)*Gc*xlc+
