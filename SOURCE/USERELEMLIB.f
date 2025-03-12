@@ -82,7 +82,7 @@ c
 c --- Include pressure load      
       DOUBLE PRECISION pPres(8), SHTR(8,8), fPres(8)
 c --- Real constants      
-      DOUBLE PRECISION Ex, nu, xlc, Gc, xk, C1, C2
+      DOUBLE PRECISION Ex, nu, xlc, Gc, xk, C1, C2, C3
 c --- Flags
       INTEGER ELTYPE
 c --- temporary debug key
@@ -98,12 +98,20 @@ c --- temporary debug key
       parameter (gaussCoord=0.577350269d0)
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc      
 c     get real constants
-      C1 = RealConst(1) 
-      C2 = RealConst(2)
-      xlc= RealConst(3)
-      IF (C1.EQ.0.0d0) Gc = RealConst(4)
-      xk = RealConst(5)
+      Gc = RealConst(1)
+      xlc= RealConst(2)
+      C1 = RealConst(3) 
+      C2 = RealConst(4)
+      C3 = RealConst(5)
+      xk = 1.0e-7 
       ELTYPE=  RealConst(6)
+      IF (C1.NE.0.0d0) THEN
+              Gc = C1*temper(1)**C2
+      END IF
+      IF (C3.NE.0.0d0) THEN
+          xlc = xlc/exp(temper(1)*C3)
+      END IF
+      ! Gc = Gc/exp(temper(1)*C3)
 c      ELID near the crack tip 578, and 611 is far away
       !debugELM = 578
       !IF (elID.eq.debugELM) THEN
@@ -270,7 +278,7 @@ c     adopted linear shape functions
           do inod=1,nNodes
               phi=phi+dN(inod,1)*phik(inod)
           end do
-
+          !if (phi.lt.0.d0) phi= 0
           du = 0.d0
           u = 0.d0
           if (phi.gt.1.d0) phi=1
@@ -337,7 +345,9 @@ c      description of ANSYS internal ElemGetMat function can be found at the end
             kTherm = 0
       !Ex =  MatProp(1) 
       nu =  MatProp(5)
-      IF (C1.NE.0.0d0) Gc = C1*(exp(C2 * temper(1)))
+      !for positive C1 power law, for negative logarithmic
+      !debug=10
+      
 !c
         Psi=EnergyD(1)+EnergyD(2)+EnergyD(3)
         if (Psi.gt.Hn) then
@@ -353,11 +363,11 @@ c      description of ANSYS internal ElemGetMat function can be found at the end
         saveVars(10*(intPnt-1) + 10) = H
         
         amatrx(1:8,1:8)=amatrx(1:8,1:8)+
-     1      dvol*(((1.d0-phin)**2+xk)*
+     1      dvol*(((1.d0-phi)**2+xk)*
      1      matmul(matmul(transpose(Bmat),cMat),Bmat)) 
             
         rhs(1:8)=rhs(1:8)+
-     1 dvol*(matmul(transpose(Bmat),Stress)*((1.d0-phin)**2+xk))       
+     1 dvol*(matmul(transpose(Bmat),Stress)*((1.d0-phi)**2+xk))       
             
         amatrx(9:12,9:12)=amatrx(9:12,9:12)+
      1    dvol*(matmul(transpose(dNdx),dNdx)*Gc*xlc+
@@ -365,7 +375,7 @@ c      description of ANSYS internal ElemGetMat function can be found at the end
            
         rhs(9:12)=rhs(9:12)+
      1    dvol*(matmul(transpose(dNdx),matmul(dNdx,phik(1:4)))
-     2    *Gc*xlc+dN(1:4,1)*((Gc/xlc+2.d0*H)*phi-2.d0*H)) 
+     2    *Gc*xlc+dN(1:4,1)*((Gc/xlc*phi-2.d0*H*(1-phi)))) 
 
 
 
