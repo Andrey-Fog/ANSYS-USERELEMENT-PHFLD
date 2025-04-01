@@ -83,6 +83,7 @@ c --- Include pressure load
       DOUBLE PRECISION pPres(8), SHTR(8,8), fPres(8)
 c --- Real constants      
       DOUBLE PRECISION Ex, nu, xlc, Gc, xk, C1, C2, C3
+      DOUBLE PRECISION BW_C1, BW_C2, fBaiWerb, Gc_ma
 c --- Flags
       INTEGER ELTYPE
 c --- temporary debug key
@@ -105,9 +106,14 @@ c     get real constants
       C3 = RealConst(5)
       xk = 1.0e-7 
       ELTYPE=  RealConst(6)
+      BW_C1 = RealConst(7)
+      BW_C2 = RealConst(8)
+c     power law added to relationship between critical energy release rate an temperature
+c     put C1, C2 equal to zero if you not need them      
       IF (C1.NE.0.0d0) THEN
               Gc = C1*temper(1)**C2
       END IF
+c     this coorelation function is needed to coressponding FEN and experiment
       IF (C3.NE.0.0d0) THEN
           xlc = xlc/exp(temper(1)*C3)
       END IF
@@ -145,7 +151,7 @@ c ---  \\\\\\\\Start loop on material integration points/////
 c ---   \\\\\\\\\\\\\\\\\\\\\\\\////////////////////////////       
       DO intPnt = 1, nIntPnts
 c --- temperatures at integration points
-
+          
          TemperIP = vdot(shIso(1), temper(1), nNodes)
          TemperIPB = vdot(shIso(1), temperB(1), nNodes)
          
@@ -299,13 +305,24 @@ c     adopted linear shape functions
               u(i-1,1) = TotValDofs(i+2)
           end do
           
- !     compute the increment of strain and recover history variables          
+c     compute the increment of strain and recover history variables          
           dstran = 0.d0
           dstran= matmul(Bmat,du)
           stran = matmul(Bmat,u)
           phin = saveVars(10*(intPnt-1) + 9)
           Hn = saveVars(10*(intPnt-1) + 10)
-          
+          Stress = 0.d0
+          do i=1,ncomp
+            Stress(i)=saveVars(40 + 10*(intPnt-1) + i)
+          end do
+c     correlation coefficient based on Bai-Wierzbicki model
+      If (BW_C1.NE.0.d0) THEN
+              CALL fmultiaxial(BW_C1,BW_C2,Stress(1),ncomp,fBaiWerb) 
+              Gc_ma=Gc*fBaiWerb
+          ELSE
+              Gc_ma=Gc
+      ENDIF
+           saveVars(40 + 10*(intPnt-1) + 8)  =   fBaiWerb
 c --- Current IP coords          
        xCurIP=0.d0
        do k1=1,nnodes
@@ -345,10 +362,10 @@ c      description of ANSYS internal ElemGetMat function can be found at the end
             kTherm = 0
       !Ex =  MatProp(1) 
       nu =  MatProp(5)
-      !for positive C1 power law, for negative logarithmic
-      !debug=10
+
+
       
-!c
+      
         Psi=EnergyD(1)+EnergyD(2)+EnergyD(3)
         if (Psi.gt.Hn) then
                   H=Psi
@@ -362,6 +379,7 @@ c      description of ANSYS internal ElemGetMat function can be found at the end
         saveVars(10*(intPnt-1) + 9) = phi
         saveVars(10*(intPnt-1) + 10) = H
         
+        
         amatrx(1:8,1:8)=amatrx(1:8,1:8)+
      1      dvol*(((1.d0-phi)**2+xk)*
      1      matmul(matmul(transpose(Bmat),cMat),Bmat)) 
@@ -370,12 +388,12 @@ c      description of ANSYS internal ElemGetMat function can be found at the end
      1 dvol*(matmul(transpose(Bmat),Stress)*((1.d0-phi)**2+xk))       
             
         amatrx(9:12,9:12)=amatrx(9:12,9:12)+
-     1    dvol*(matmul(transpose(dNdx),dNdx)*Gc*xlc+
-     2    matmul(dN,transpose(dN))*(Gc/xlc+2.d0*H))
+     1    dvol*(matmul(transpose(dNdx),dNdx)*Gc_ma*xlc+
+     2    matmul(dN,transpose(dN))*(Gc_ma/xlc+2.d0*H))
            
         rhs(9:12)=rhs(9:12)+
      1    dvol*(matmul(transpose(dNdx),matmul(dNdx,phik(1:4)))
-     2    *Gc*xlc+dN(1:4,1)*((Gc/xlc*phi-2.d0*H*(1-phi)))) 
+     2    *Gc_ma*xlc+dN(1:4,1)*((Gc_ma/xlc*phi-2.d0*H*(1-phi)))) 
 
 
 
@@ -383,10 +401,13 @@ c      description of ANSYS internal ElemGetMat function can be found at the end
         do i=1,ntens
               saveVars(40 + 10*(intPnt-1) + i) = 
      1        Stress(i)*((1.d0-phin)**2+xk) 
-              saveVars(40 + 10*(intPnt-1) + i + 4) = Strain(i)
-              Stress(i)= 
-     1        Stress(i)*((1.d0-phin)**2+xk)
+              
+!              Stress(i)= 
+!     1        Stress(i)*((1.d0-phin)**2+xk)
       end do
+      saveVars(40 + 10*(intPnt-1) + 5) = EnergyD(1)
+      saveVars(40 + 10*(intPnt-1) + 6) = EnergyD(2)
+      saveVars(40 + 10*(intPnt-1) + 7) = EnergyD(3)
       k1 = (intPnt-1)*nTens+1
 c --- calculate other element quantities
                CALL vmove (Strain(1), wStrain(k1), nTens)
@@ -623,7 +644,33 @@ c
        xx1Old(2,2)=xx1Old(2,2)+dNidy*utmpOld(2)
 
       end do
-c
+      return
+      end
+
+      subroutine fmultiaxial(NLCnst,NLPwr,strs,ncmps,LimSurfVal)
+#include "impcom.inc"
+c     returm correlation coefficient based on Bai-Wierzbicki model
+c     https://doi.org/10.1016/j.ijplas.2007.09.004 
+c     NLCnst,NLPwr    model parameters 
+c     strs            stresses
+c     ncmps           number of components
+c     LimSurfVal      returned value of coeffitcient      
+          DOUBLE PRECISION NLCnst,NLPwr, LimSurfVal, cn1,cn2, Lodeangle
+          DOUBLE PRECISION strs(6), princstrs(11), princSm, princSdev(3)
+          INTEGER ncmps
+c         calculate principal stresses 
+          princstrs=0
+          princstrs(1:ncmps) = strs(1:ncmps)
+          call prinst(princstrs) 
+c         Lode angle
+          princSm=(princstrs(7)+princstrs(8)+princstrs(9))/3
+          princSdev(1:3)=princstrs(7:9)-princSm
+          cn1=princSdev(1)*princSdev(2)*princSdev(3)
+          Lodeangle=27/2*cn1/princstrs(11)**3
+          cn2=1-2/3.14*acos(Lodeangle)
+c         multuaxial state
+          LimSurfVal=NLCnst+(1-NLCnst)*(cn2*6/3.14)**NLPwr     
+          LimSurfVal = 1/LimSurfVal
       return
       end
 c***********************************************************************************
