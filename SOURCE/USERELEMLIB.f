@@ -83,7 +83,7 @@ c --- Include pressure load
       DOUBLE PRECISION pPres(8), SHTR(8,8), fPres(8)
 c --- Real constants      
       DOUBLE PRECISION Ex, nu, xlc, Gc, xk, C1, C2, C3
-      DOUBLE PRECISION BW_C1, BW_C2, fBaiWerb, Gc_ma
+      DOUBLE PRECISION BW_C1, BW_C2, fBaiWerb, Gc_ma, bettaH, disipH
 c --- Flags
       INTEGER ELTYPE
 c --- temporary debug key
@@ -108,6 +108,7 @@ c     get real constants
       ELTYPE=  RealConst(6)
       BW_C1 = RealConst(7)
       BW_C2 = RealConst(8)
+      bettaH = RealConst(9)
 c     power law added to relationship between critical energy release rate an temperature
 c     put C1, C2 equal to zero if you not need them      
       IF (C1.NE.0.0d0) THEN
@@ -363,11 +364,13 @@ c      description of ANSYS internal ElemGetMat function can be found at the end
       !Ex =  MatProp(1) 
       nu =  MatProp(5)
 
-
-      
-      
-        Psi=EnergyD(1)+EnergyD(2)+EnergyD(3)
-        if (Psi.gt.Hn) then
+c    If dissipation of plastic work as heat is considered then betta < 1
+c    Andres Diaz, Jesus Manuel Alegre, Isidoro Ivan Cuesta, Emilio Martinez-Paneda,
+c    A COMSOL framework for predicting hydrogen embrittlement, Part II: Phase field fracture,
+c    EFM,V319, https://doi.org/10.1016/j.engfracmech.2025.111008.          
+        disipH =  bettaH*(1- phi)**2 + 1 - bettaH
+        Psi=EnergyD(1)+disipH*EnergyD(2)+EnergyD(3)
+        if ((Psi.gt.Hn).and.(phi.ne.1.0d0)) then
                   H=Psi
               else
                   H=Hn
