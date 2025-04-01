@@ -369,7 +369,7 @@ c    Andres Diaz, Jesus Manuel Alegre, Isidoro Ivan Cuesta, Emilio Martinez-Pane
 c    A COMSOL framework for predicting hydrogen embrittlement, Part II: Phase field fracture,
 c    EFM,V319, https://doi.org/10.1016/j.engfracmech.2025.111008.          
         disipH =  bettaH*(1- phi)**2 + 1 - bettaH
-        Psi=EnergyD(1)+disipH*EnergyD(2)+EnergyD(3)
+        Psi=EnergyD(1)+bettaH*EnergyD(2)+EnergyD(3)
         if ((Psi.gt.Hn).and.(phi.ne.1.0d0)) then
                   H=Psi
               else
