@@ -20,7 +20,7 @@ BW_C2 = 0
 PLTWDTH = 1     
 PLTHGT  = 1 
 CRCKL   = 0.5
-NITER=100
+NITER=20
 
 /PREP7
 !*** Add userelement 
@@ -79,8 +79,8 @@ MSHKEY,0
 AMESH,ALL  
 !*** Uncomment next lines to refine FE model
 EREF,ALL, , ,1,0,1,1
-!EREF,ALL, , ,1,0,1,1
-!EREF,ALL, , ,1,0,1,1
+EREF,ALL, , ,1,0,1,1
+EREF,ALL, , ,1,0,1,1
 !*************************** LOADS
 
 DL,3, ,UY,0  
@@ -97,9 +97,9 @@ FINISH
 nlgeom,on
 OUTRES,ALL,ALL
 OUTRES,SVAR,ALL
-auto,0
+auto,1
 time,1
-nsubst,NITER,NITER*100000,NITER/10
+nsubst,NITER,NITER*1000000,NITER/10
 SAVE
 SOLVE
 
