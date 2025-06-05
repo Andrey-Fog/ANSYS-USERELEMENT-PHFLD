@@ -4,15 +4,17 @@ FINISH
 /clear
 !*** Define parameters related to model
 
-E  = 210000 		!- Young's modulus [MPa]
-v  = 0.3		!- Poisson's ratio
-L  = 0.04		!- Phase Field length parameter [mm]
-Gc = 27	  !- Critical energy release rate [MPa mm]
-C1 = 0      !- If C1 nonzero then Gc = C1*temp^C2
+E  = 210000     !- Young's modulus [MPa]
+v  = 0.3	      !- Poisson's ratio
+S02= 300        !- Yield Stress [Mpa]
+Stg= 2000       !- Tangential modulus
+L  = 0.04	      !- Phase Field length parameter [mm]
+Gc = 2.7	      !- Critical energy release rate [MPa mm]
+C1 = 0          !- If C1 nonzero then Gc = C1*temp^C2
 C2 = 0
 C3 = 0
 
-DisipH = 1    !Dissipation (1 - no dissipation) 
+DisipH = 0.1    !Dissipation (1 - no dissipation) 
 BW_C1 = 0 		!- Coefficients of multiaxial function based on Bai-Wierzbicki model
 BW_C2 = 0 
 
@@ -36,6 +38,10 @@ MPTEMP,,,,,,,,
 MPTEMP,1,0  
 MPDATA,EX,1,,E 
 MPDATA,PRXY,1,,v  
+
+!*** Plastic properties
+TB,BISO,1,1,2,  
+TBDATA,,S02,Stg,,,,
 
 !***************************CREATE GEOMETRY
 
@@ -95,7 +101,7 @@ DL,8, ,UY,0.05
 FINISH
 /SOL
 ANTYPE,0
-nlgeom,on
+nlgeom,0
 OUTRES,ALL,ALL
 OUTRES,SVAR,ALL
 auto,1
