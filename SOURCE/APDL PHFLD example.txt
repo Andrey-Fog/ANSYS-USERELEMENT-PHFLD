@@ -7,8 +7,8 @@ FINISH
 E  = 210000 		!- Young's modulus [MPa]
 v  = 0.3		!- Poisson's ratio
 L  = 0.04		!- Phase Field length parameter [mm]
-Gc = 2.7	  !- Critical energy release rate [MPa mm]
-C1 = 0      !- Gc = C1*temp^C2
+Gc = 27	  !- Critical energy release rate [MPa mm]
+C1 = 0      !- If C1 nonzero then Gc = C1*temp^C2
 C2 = 0
 C3 = 0
 
@@ -20,13 +20,13 @@ BW_C2 = 0
 PLTWDTH = 1     
 PLTHGT  = 1 
 CRCKL   = 0.5
-NITER=20
+NITER=100
 
 /PREP7
 !*** Add userelement 
 ET,1,USER300
 !*USRELEM, NNODES, NDIM, KeyShape, NREAL, NSAVEVARS, NRSLTVAR, KEYANSMAT, NINTPNTS, KESTRESS, KEYSYM
-USRELEM, 4, 2, QUAD, 9, 100, 100, 1, 4, 5, 0
+USRELEM, 4, 2, QUAD, 9, 100, 100, 1, 4, 2, 0
 R,1,Gc,L,C1,C2,C3,0,
 RMORE,BW_C1,BW_C2,DisipH
 usrdof,Define,ux,uy,uz
@@ -79,8 +79,8 @@ MSHKEY,0
 AMESH,ALL  
 !*** Uncomment next lines to refine FE model
 EREF,ALL, , ,1,0,1,1
-EREF,ALL, , ,1,0,1,1
-EREF,ALL, , ,1,0,1,1
+!EREF,ALL, , ,1,0,1,1
+!EREF,ALL, , ,1,0,1,1
 !*************************** LOADS
 
 DL,3, ,UY,0  
@@ -88,18 +88,19 @@ DL,4, ,UY,0
 
 DK,5, , , ,0,UX, , , , , ,   
 
-DL,7, ,UY,0.01 
-DL,8, ,UY,0.01  
+DL,7, ,UY,0.05 
+DL,8, ,UY,0.05  
 
 !*************************** SOLUTION
 FINISH
 /SOL
+ANTYPE,0
 nlgeom,on
 OUTRES,ALL,ALL
 OUTRES,SVAR,ALL
 auto,1
 time,1
-nsubst,NITER,NITER*1000000,NITER/10
+nsubst,NITER,NITER*10000,NITER/10
 SAVE
 SOLVE
 
