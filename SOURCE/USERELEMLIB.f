@@ -127,7 +127,7 @@ c      ELID near the crack tip 578, and 611 is far away
       nTens = nDim*2
       nComp = nDim*nDim
       nDirect = 3
-      nlgeom = 0
+      !nlgeom = 0
       amatrx = 0.d0
       rhs = 0.d0
       eStiff = 0.d0
@@ -333,13 +333,10 @@ c --- Current IP coords
        end do
 
        IF (nlgeom.EQ.0) THEN
+         defG0=0.0D0
          DO iDim = 1, 3
-            DO iDim1 = 1, 3
-               defG0(iDim, iDim1) = 0.0D0
-            END DO
             defG0(iDim, iDim) = 1.0D0
          END DO
-
          CALL vmove (defG0(1,1),defG(1,1),9)
          IncStrain(1:4)=stran(1:4,1) !!!!
        ELSE
